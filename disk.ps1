@@ -22,10 +22,7 @@ Function Format-Size {
             'TB' { $divisor = 1TB; $unit = 'TB' }
             'PB' { $divisor = 1PB; $unit = 'PB' }
         }
-        return "{0:N2} $unit" -f ($bytes / $divisor)
-    }
-
-    if ($bytes -ge 1PB) {
+    } elseif ($bytes -ge 1PB) {
         $unit = "PB"
         $divisor = 1PB
     } elseif ($bytes -ge 1TB) {
