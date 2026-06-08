@@ -1,3 +1,4 @@
+[CmdletBinding()]
 param(
     # help takes precedence when present
     [switch]$help,
