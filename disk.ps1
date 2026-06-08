@@ -48,7 +48,8 @@ Function Format-Size {
 
 # If user asked for help, show a short usage and exit (help has precedence)
 if ($help) {
-    Write-Output "Flags     -unit <B|KB|MB|GB|TB|PB> (Optional, defaults to auto-scaling. Positional binding allowed.)"
+    Write-Output "Flags     -unit <B|KB|MB|GB|TB|PB> (Optional, defaults to auto-scaling."
+    Write-Output "                                    Positional binding allowed.)"
     Write-Output "          -help    Show this help"
     return
 }
