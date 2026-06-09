@@ -8,45 +8,54 @@ param(
     [string]$unit
 )
 
+# Define a hashtable to map size units to their corresponding byte values for easy conversion.
+$sizeUnits = @{
+    B = 1
+    KB = 1KB
+    MB = 1MB
+    GB = 1GB
+    TB = 1TB
+    PB = 1PB
+}
+
+# Create an ordered list of size units for auto-scaling, sorted from largest to smallest.
+$autoScaleOrder = $sizeUnits.Keys | Sort-Object { $sizeUnits[$_] } -Descending
+
 Function Format-Size {
     param(
         [long]$bytes,
         [string]$targetUnit
     )
 
-    if ($PSBoundParameters.ContainsKey('targetUnit') -and $targetUnit) {
-        switch ($targetUnit) {
-            'B'  { $divisor = 1; $unit = 'B' }
-            'KB' { $divisor = 1KB; $unit = 'KB' }
-            'MB' { $divisor = 1MB; $unit = 'MB' }
-            'GB' { $divisor = 1GB; $unit = 'GB' }
-            'TB' { $divisor = 1TB; $unit = 'TB' }
-            'PB' { $divisor = 1PB; $unit = 'PB' }
+    # Checks if a parameter for $targetUnit was provided.
+    if ($targetUnit) {
+        # Checks if provided parameter $targetUnit is valid and exists in the $sizeUnits hashtable. Otherwise, throw an error.
+        if (-not $sizeUnits.ContainsKey($targetUnit)) {
+            throw "Invalid unit '$targetUnit'. Valid units: $($sizeUnits.Keys -join ', ')"
         }
-    } elseif ($bytes -ge 1PB) {
-        $unit = "PB"
-        $divisor = 1PB
-    } elseif ($bytes -ge 1TB) {
-        $unit = "TB"
-        $divisor = 1TB
-    } elseif ($bytes -ge 1GB) {
-        $unit = "GB"
-        $divisor = 1GB
-    } elseif ($bytes -ge 1MB) {
-        $unit = "MB"
-        $divisor = 1MB
-    } elseif ($bytes -ge 1KB) {
-        $unit = "KB"
-        $divisor = 1KB
+
+        # Use the provided target unit and its corresponding divisor for scaling.
+        $unit = $targetUnit
+        $divisor = $sizeUnits[$targetUnit]
     } else {
-        $unit = "B"
-        $divisor = 1
+        # Default to bytes if no auto-scaling candidate is found.
+        $unit = 'B'
+        $divisor = $sizeUnits[$unit]
+
+        foreach ($candidate in $autoScaleOrder) {
+            if ($bytes -ge $sizeUnits[$candidate]) {
+                $unit = $candidate
+                $divisor = $sizeUnits[$candidate]
+                break
+            }
+        }
     }
 
+    # Format the output string with two decimal places and the appropriate unit.
     return "{0:N2} $unit" -f ($bytes / $divisor)
 }
 
-# If user asked for help, show a short usage and exit (help has precedence)
+# If user asked for help, show a short usage and exit (help has precedence).
 if ($help) {
     Write-Output "Flags     -unit <B|KB|MB|GB|TB|PB> (Optional, defaults to auto-scaling."
     Write-Output "                                    Positional binding allowed.)"
@@ -54,6 +63,7 @@ if ($help) {
     return
 }
 
+# Retrieve logical disk information and format the output.
 Get-CimInstance Win32_LogicalDisk |
     Select-Object DeviceID,
                   VolumeName,
